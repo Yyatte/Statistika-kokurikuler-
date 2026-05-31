@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem Monitoring Penjualan Lele Nasional</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root {
+    --bg-main: #f4f7fa;
+    --sidebar-bg: #1e293b;
+    --accent-teal: #0ea5e9;
+    --accent-green: #10b981;
+    --text-dark: #0f172a;
+    --text-muted: #64748b;
+    --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-dark);
+}
+
+/* TATA LETAK UTAMA: SPLIT PANEL */
+.dashboard-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* PANEL KIRI (SIDEBAR & INPUT DATA) */
+.left-panel {
+    width: 380px;
+    background-color: var(--sidebar-bg);
+    color: #ffffff;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+    box-shadow: 5px 0 25px rgba(0,0,0,0.1);
+    z-index: 10;
+}
+
+.brand-section {
+    margin-bottom: 35px;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 20px;
+}
+
+.brand-section h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(to right, #38bdf8, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.brand-section p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 5px;
+}
+
+/* TABEL UTAMA DI SIDEBAR KIRI */
+.table-container {
+    flex-grow: 1;
+}
+
+.table-container h3 {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 15px;
+}
+
+.compact-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.compact-table th {
+    text-align: left;
+    padding: 8px;
+    color: #94a3b8;
+    border-bottom: 2px solid #334155;
+}
+
+.compact-table td {
+    padding: 8px;
+    border-bottom: 1px solid #334155;
+}
+
+.compact-table tr:hover td {
+    background-color: #334155;
+    color: #38bdf8;
+}
+
+/* PANEL KANAN (GRAFIK & METRIK UTAMA) */
+.right-panel {
+    margin-left: 380px;
+    flex-grow: 1;
+    padding: 40px;
+    background-color: var(--bg-main);
+}
+
+/* GRID UKURAN PEMUSATAN DATA BARU */
+.metric-row {
+    display: flex;
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.metric-pill {
+    flex: 1;
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-pill::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 6px;
+}
+
+.metric-pill.mean::before { background-color: var(--accent-teal); }
+.metric-pill.median::before { background-color: var(--accent-green); }
+.metric-pill.modus::before { background-color: #f59e0b; }
+
+.metric-info h4 {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-info h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-top: 5px;
+}
+
+.metric-badge {
+    background-color: #f1f5f9;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+/* GRID GRAFIK & PERSENTASE */
+.charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.main-chart-box {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+}
+
+.main-chart-box h3 {
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+    font-weight: 600;
+}
+
+/* HISTOGRAM DAN LINGKARAN TERPISAH SECARA HORIZONTAL */
+.secondary-charts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+/* RESUME/KESIMPULAN DENGAN STYLE KOTAK CATATAN DIREKSI */
+.executive-summary {
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+    padding: 35px;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid #e2e8f0;
+}
+
+.executive-summary h3 {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.summary-bullet {
+    display: flex;
+    margin-bottom: 15px;
+    align-items: flex-start;
+}
+
+.summary-bullet .icon {
+    background: #e0f2fe;
+    color: #0369a1;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.85rem;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.summary-bullet p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #334155;
+}
+
+.emp {
+    font-weight: 600;
+    color: var(--sidebar-bg);
+}
+
+@media(max-width: 1024px) {
+    .dashboard-wrapper { flex-direction: column; }
+    .left-panel { width: 100%; position: relative; height: auto; }
+    .right-panel { margin-left: 0; padding: 20px; }
+    .metric-row { flex-direction: column; }
+    .charts-grid, .secondary-charts { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="dashboard-wrapper">
+
+    <div class="left-panel">
+        <div class="brand-section">
+            <h1>Penjualan Lele</h1>
+            <p>Sistem Data Distribusi Budidaya Perikanan</p>
+            <h3>oleh:</h3>
+            <h3>M.Parama Mahaputra Rokhim/20</h3>
+            <h3>XI TKJ 2</h3>
+        </div>
+
+        <div class="table-container">
+            <h3>Log Volume Penjualan Lele</h3>
+            <table class="compact-table">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Provinsi</th>
+                        <th>Volume</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        
+        <div class="metric-row">
+            <div class="metric-pill mean">
+                <div class="metric-info">
+                    <h4>Rata-Rata Wilayah</h4>
+                    <h2 id="m-mean">00.0</h2>
+                </div>
+                <div class="metric-badge">Ton</div>
+            </div>
+            <div class="metric-pill median">
+                <div class="metric-info">
+                    <h4>Nilai Median</h4>
+                    <h2 id="m-median">00.0</h2>
+                </div>
+                <div class="metric-badge">Ton</div>
+            </div>
+            <div class="metric-pill modus">
+                <div class="metric-info">
+                    <h4>Nilai Modus (Sering Muncul)</h4>
+                    <h2 id="m-modus">00.0</h2>
+                </div>
+                <div class="metric-badge" style="background:#fef3c7; color:#d97706;">Bimodal</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="main-chart-box" style="grid-column: span 2;">
+                <h3>Peringkat Volume Penjualan Antar Provinsi (Ton)</h3>
+                <canvas id="barChart" style="max-height: 350px;"></canvas>
+            </div>
+        </div>
+
+        <div class="secondary-charts">
+            <div class="main-chart-box">
+                <h3>Kepadatan Distribusi Kelas (Histogram)</h3>
+                <canvas id="histogramChart"></canvas>
+            </div>
+            <div class="main-chart-box">
+                <h3>Proporsi Kluster Pasar (Diagram Lingkaran)</h3>
+                <div style="max-width: 250px; margin: auto;">
+                    <canvas id="pieChart"></canvas>
+                </div>
+                
+                <table class="compact-table" style="color:var(--text-dark); margin-top:20px; font-size:0.8rem;">
+                    <thead>
+                        <tr>
+                            <th style="color:var(--text-dark); border-bottom:2px solid #e2e8f0;">Kluster</th>
+                            <th style="color:var(--text-dark); border-bottom:2px solid #e2e8f0;">Unit</th>
+                            <th style="color:var(--text-dark); border-bottom:2px solid #e2e8f0;">Porsi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pieTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="executive-summary">
+            <h3>Kesimpulan</h3>
+            <div class="summary-bullet">
+                <div class="icon">1</div>
+                <p>Berdasarkan kalkulasi parameter pemusatan data, rata-rata serapan pasar nasional bertitik di <span class="emp" id="r-mean"></span> Ton dengan nilai tengah data berada di angka <span class="emp" id="r-median"></span> Ton. Nilai kebiasaan stok pasar (<span class="emp">Modus</span>) yang paling konsisten terbentuk adalah berkapasitas <span class="emp" id="r-modus"></span> Ton.</p>
+            </div>
+            <div class="summary-bullet">
+                <div class="icon">2</div>
+                <p>Pusat produksi dan perdagangan skala masif dipimpin oleh wilayah korporasi <span class="emp" id="r-top"></span>, sementara basis budidaya terkecil saat ini diduduki oleh <span class="emp" id="r-low"></span>.</p>
+            </div>
+            <div class="summary-bullet">
+                <div class="icon">3</div>
+                <p>Analisis spasial melalui histogram menunjukkan konsentrasi kepadatan tertinggi berada pada rentang kapasitas menengah ke bawah (40-49 Ton). Kluster pasar ini menguasai porsi pasar terbesar nasional, mencerminkan pergerakan rantai pasok lele didominasi oleh pelaku usaha kecil dan menengah.</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// RAW DATA PENJUALAN LELE (20 PROVINSI) - BULAT
+const datasetLele = [
+    ["Jawa Barat", 85], ["Jawa Timur", 78], ["Jawa Tengah", 72], ["Sumatera Utara", 65],
+    ["DI Yogyakarta", 58], ["Riau", 54], ["Lampung", 54], ["Sumatera Selatan", 50],
+    ["Banten", 48], ["Kalimantan Selatan", 48], ["Sulawesi Selatan", 45], ["Sumatera Barat", 45],
+    ["Jambi", 45], ["Kalimantan Timur", 42], ["Nusa Tenggara Barat", 40], ["Aceh", 40],
+    ["Kalimantan Tengah", 38], ["Bali", 35], ["Sulawesi Tengah", 35], ["Gorontalo", 30]
+];
+
+const values = datasetLele.map(x => x[1]);
+
+// POPULASI SIDEBAR TABLE
+const tbody = document.getElementById("tableBody");
+datasetLele.forEach((item, idx) => {
+    tbody.innerHTML += `<tr><td>${idx+1}</td><td>${item[0]}</td><td><strong>${item[1]} T</strong></td></tr>`;
+});
+
+// STATISTIK DESKRIPTIF
+const mean = values.reduce((a,b)=>a+b,0) / values.length;
+const sorted = [...values].sort((a,b)=>a-b);
+const median = (sorted[9] + sorted[10]) / 2;
+
+// PERHITUNGAN MODUS OTOMATIS
+const frequencyMap = {};
+let maxFreq = 0;
+values.forEach(num => {
+    frequencyMap[num] = (frequencyMap[num] || 0) + 1;
+    if(frequencyMap[num] > maxFreq) maxFreq = frequencyMap[num];
+});
+let modeValues = [];
+for (let num in frequencyMap) {
+    if(frequencyMap[num] === maxFreq) modeValues.push(num);
+}
+let modus = modeValues.join(", ");
+
+// DISTRIBUSI ANGKA KE METRIK UTAMA
+document.getElementById("m-mean").innerText = mean.toFixed(1);
+document.getElementById("m-median").innerText = median.toFixed(1);
+document.getElementById("m-modus").innerText = modus;
+
+// DISTRIBUSI ANGKA KE RESUME EKSEKUTIF
+document.getElementById("r-mean").innerText = mean.toFixed(1);
+document.getElementById("r-median").innerText = median.toFixed(1);
+document.getElementById("r-modus").innerText = modus + " ";
+document.getElementById("r-top").innerText = `${datasetLele[0][0]} (${datasetLele[0][1]} Ton)`;
+document.getElementById("r-low").innerText = `${datasetLele[datasetLele.length-1][0]} (${datasetLele[datasetLele.length-1][1]} Ton)`;
+
+// INTEGRASI DIAGRAM BATANG
+new Chart(document.getElementById("barChart"), {
+    type: 'bar',
+    data: {
+        labels: datasetLele.map(x => x[0]),
+        datasets: [{
+            data: values,
+            backgroundColor: '#0ea5e9',
+            hoverBackgroundColor: '#1e293b',
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
+    }
+});
+
+// INTERVAL KELOMPOK UNTUK HISTOGRAM & LINGKARAN
+const klusterData = [
+    { range: '30-39 Ton', count: 4 },
+    { range: '40-49 Ton', count: 7 },
+    { range: '50-59 Ton', count: 4 },
+    { range: '60-69 Ton', count: 1 },
+    { range: '70-79 Ton', count: 2 },
+    { range: '80-89 Ton', count: 1 }
+];
+
+// POPULASI TABEL DIAGRAM LINGKARAN
+const pieTbody = document.getElementById("pieTableBody");
+klusterData.forEach(item => {
+    let percentage = ((item.count / values.length) * 100).toFixed(0);
+    pieTbody.innerHTML += `<tr><td>${item.range}</td><td>${item.count} Prov</td><td><strong>${percentage}%</strong></td></tr>`;
+});
+
+// INTEGRASI HISTOGRAM
+new Chart(document.getElementById("histogramChart"), {
+    type: 'bar',
+    data: {
+        labels: klusterData.map(x => x.range.replace(' Ton','')),
+        datasets: [{
+            data: klusterData.map(x => x.count),
+            backgroundColor: '#10b981',
+            barPercentage: 1.0,
+            categoryPercentage: 1.0,
+            borderColor: '#ffffff',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { ticks: { stepSize: 1 } } }
+    }
+});
+
+// INTEGRASI DIAGRAM LINGKARAN (PIE)
+new Chart(document.getElementById("pieChart"), {
+    type: 'pie',
+    data: {
+        labels: klusterData.map(x => x.range),
+        datasets: [{
+            data: klusterData.map(x => x.count),
+            backgroundColor: ['#64748b', '#0ea5e9', '#10b981', '#f59e0b', '#6366f1', '#ec4899']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } }
+    }
+});
+</script>
+
+</body>
+</html>
